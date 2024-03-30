@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+   <style>
+    body{
+        font-family: Roboto;
+    }
+    .container {
+        display: flex;
+        flex-direction: column;      
+        max-width: 90%;
+        margin: 20px auto;
+    }
+    #heading{
+        display: flex;
+        width: 100%;
+        justify-content: center;
+        font-size: 20;
+        font-weight: 600;
+    }
+    section {
+        margin-bottom: 20px;
+    }
+    .task{
+        display: flex;
+        width: 99%;
+        color: #fff;
+        padding: 0px 6px 0px 10px;
+        font-weight: 300;
+        justify-content: space-between;
+    }
+    p{
+        display: flex;
+        width: 30%;
+    }
+    .high-priority,.medium-priority,.low-priority{
+        border-radius: 5px;
+        margin-bottom: 5px;
+    }
+    .high-priority {
+        border-color: red;        
+    }
+    .medium-priority {
+        border-color: #fff;        
+    }
+    .low-priority {
+        border-color: green;       
+    }
+    .Itbtn1 {
+        background-color: black;
+        border: none;
+        color: white;
+        padding: 12px 6px 12px 0px;
+        font-size: 16px;
+        cursor: pointer;        
+    }        
+    #todayTasks,#futureTasks,#completedTasks{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 30px;
+    }
+    #inputcontainer{
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        
+    }
+    #itemName{
+        width:38%
+    }
+    #itemDate,#priority{
+        width: 23%;
+    }
+    #inbtn{
+        border: none;
+        background-color: black;
+        color: #fff;
+        padding: 8px 40px 8px 40px;
+    }
+
+</style>
+</head>
+<body>
+    <div class="container">
+        <section id="add-item">
+            <h2 id="heading">To-Do List</h2>
+            <div id="inputcontainer">
+                <input type="text" id="itemName" placeholder="Item Name">
+                <input type="text" id="itemDate" placeholder="Deadline"
+                onfocus="(this.type='date')" >
+                <select id="priority">
+                    <option value="" disabled selected>Priority</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+                <button id="inbtn" onclick="addItem()">Add Item</button>
+            </div>
+        </section>
+        <div>
+        <section id="todays-tasks">
+            <h3>Today's TodoList</h3>
+            <div id="todayTasks"></div>
+        </section>
+        </div>
+        <div>
+        <section id="future-tasks">
+            <h3>Future TodoList</h3>
+            <div id="futureTasks"></div>
+        </section>
+        </div>
+        <div>
+        <section id="completed-tasks">
+            <h3>Completed TodoList</h3>
+            <div id="completedTasks"></div>
+        </section>
+        </div>
+    </div>
+
+    <script>
+
+        // Get the todo list from localStorage or initialize an empty array
+    let todoList = JSON.parse(localStorage.getItem('todoList')) || [];
+    const tday = new Date().toISOString().split('T')[0]; // Get today's date
+    // Function to render todo list
+    function renderTodoList() {
+        const today = new Date().toISOString().split('T')[0]; // Get today's date
+        console.log('tday',tday);
+        const todayTasks = todoList.filter(item => item.date === today && !item.completed);
+        const futureTasks = todoList.filter(item => item.date > today && !item.completed);
+        const completedTasks = todoList.filter(item => item.completed);
+
+        renderTasks(todayTasks, "todayTasks");
+        renderTasks(futureTasks, "futureTasks");
+        renderTasks(completedTasks, "completedTasks");
+    }
+
+    // Function to render tasks
+    function renderTasks(tasks, containerId) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        tasks.forEach(item => {
+            const priorityClass = item.priority === 'high' ? 'high-priority' : item.priority === 'medium' ? 'medium-priority' : 'low-priority';
+            
+            const taskDiv = document.createElement('div');
+            taskDiv.classList.add('task');
+            taskDiv.style.background = "black";            
+            
+            const formattedDate = formatDate(item.date);
+            // console.log(`formattedDate : ${formattedDate}`);
+            taskDiv.innerHTML = `
+            <p> ${item.name}</p>
+            <p> ${formattedDate}</p>
+            <p>Priority: ${item.priority}</p>                 
+            
+            <button class ="Itbtn1" onclick="toggleCompleted('${item.name}')">${item.completed ? '<i class="fa fa-times-circle"></i>' : '<i class="fa fa-check-circle"></i>'}</button> 
+            <button class ="Itbtn1" onclick="deleteItem('${item.name}')"><i class="fa fa-trash"></i></button>
+            `;
+           
+            if (item.date < new Date().toISOString().split('T')[0] && !item.completed) {
+                taskDiv.style.border = "2px solid red";    
+            }
+            taskDiv.classList.add(priorityClass);
+            
+            if(item.date === new Date().toISOString().split('T')[0] && !item.completed){
+            todayTasks.appendChild(taskDiv);
+            }else if(item.date > new Date().toISOString().split('T')[0] && !item.completed){
+                futureTasks.appendChild(taskDiv);
+            }       
+        });
+    }
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = date.getMonth() + 1;
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }   
+
+    // Function to add an item to the todo list
+    function addItem() {
+        const itemName = document.getElementById('itemName').value;
+        const itemDate = document.getElementById('itemDate').value;        
+        const priority = document.getElementById('priority').value;
+
+        if (itemName && itemDate && priority) {
+            const newItem = {
+                name: itemName,
+                date: itemDate,
+                priority: priority,
+                completed: false
+            };
+
+            todoList.push(newItem);
+            localStorage.setItem('todoList', JSON.stringify(todoList));
+
+            renderTodoList();
+        }
+    }
+
+    // Function to delete an item from the todo list
+    function deleteItem(name) {
+        todoList = todoList.filter(item => item.name !== name);
+        localStorage.setItem('todoList', JSON.stringify(todoList));
+        renderTodoList();
+    }
+
+    // Function to toggle the completed status of an item
+    function toggleCompleted(name) {
+        const itemIndex = todoList.findIndex(item => item.name === name);
+        todoList[itemIndex].completed = !todoList[itemIndex].completed;
+        localStorage.setItem('todoList', JSON.stringify(todoList));
+        renderTodoList();
+    }
+    // Initial rendering
+    renderTodoList();
+</script>
+</body>
+</html>
